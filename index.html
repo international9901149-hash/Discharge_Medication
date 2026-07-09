@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>患者出入院藥物交班系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F9FA;
+    --card:#FFFFFF;
+    --ink:#1B2A3A;
+    --muted:#64748B;
+    --border:#D8DEE6;
+    --teal:#0E7C7B;
+    --teal-dark:#0A5F5E;
+    --teal-soft:#E4F2F1;
+    --amber:#B45309;
+    --amber-soft:#FEF3E2;
+    --red:#B42318;
+    --red-soft:#FDE8E6;
+    --green:#15733F;
+    --green-soft:#E6F4EC;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    line-height:1.6;
+    padding:24px 16px 64px;
+  }
+  .wrap{max-width:960px;margin:0 auto;}
+
+  header{
+    border-bottom:3px double var(--ink);
+    padding-bottom:16px;
+    margin-bottom:28px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  h1{
+    font-family:"Noto Serif TC",serif;
+    font-weight:900;
+    font-size:1.7rem;
+    letter-spacing:.08em;
+  }
+  h1 .sub{
+    display:block;
+    font-family:"Noto Sans TC",sans-serif;
+    font-weight:400;
+    font-size:.85rem;
+    color:var(--muted);
+    letter-spacing:.15em;
+    margin-top:2px;
+  }
+  .badge{
+    font-size:.75rem;
+    color:var(--teal-dark);
+    background:var(--teal-soft);
+    border:1px solid var(--teal);
+    border-radius:999px;
+    padding:2px 12px;
+    letter-spacing:.1em;
+    white-space:nowrap;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+  @media (max-width:720px){ .grid{grid-template-columns:1fr;} }
+
+  .panel{
+    background:var(--card);
+    border:1.5px solid var(--ink);
+    border-radius:8px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .panel-head{
+    padding:10px 16px;
+    border-bottom:1.5px solid var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .panel-head h2{
+    font-size:1.05rem;
+    font-weight:700;
+    letter-spacing:.06em;
+  }
+  .panel-head .tag{
+    font-size:.7rem;
+    color:var(--muted);
+    letter-spacing:.05em;
+  }
+  .dropzone{
+    flex:1;
+    min-height:230px;
+    margin:14px;
+    border:2px dashed var(--border);
+    border-radius:6px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    cursor:pointer;
+    text-align:center;
+    color:var(--muted);
+    font-size:.9rem;
+    transition:border-color .15s, background .15s;
+    position:relative;
+    outline:none;
+    padding:12px;
+  }
+  .dropzone:hover, .dropzone:focus-visible{
+    border-color:var(--teal);
+    background:var(--teal-soft);
+    color:var(--teal-dark);
+  }
+  .dropzone.dragover{
+    border-color:var(--teal);
+    background:var(--teal-soft);
+  }
+  .dropzone.active-target{
+    border-color:var(--teal);
+    box-shadow:0 0 0 3px var(--teal-soft);
+  }
+  .dropzone .icon{font-size:1.8rem;}
+  .dropzone kbd{
+    background:#EEF1F5;
+    border:1px solid var(--border);
+    border-bottom-width:2px;
+    border-radius:4px;
+    padding:0 6px;
+    font-family:inherit;
+    font-size:.8rem;
+    color:var(--ink);
+  }
+  .dropzone img{
+    max-width:100%;
+    max-height:320px;
+    border-radius:4px;
+    display:block;
+  }
+  .dropzone.filled{
+    border-style:solid;
+    border-color:var(--teal);
+    cursor:default;
+    background:#fff;
+  }
+  .remove-btn{
+    position:absolute;
+    top:8px; right:8px;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    width:26px; height:26px;
+    font-size:.85rem;
+    cursor:pointer;
+    line-height:1;
+  }
+  .remove-btn:hover{background:var(--red);}
+
+  .actions{
+    margin:28px 0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .btn-primary{
+    font-family:inherit;
+    font-size:1.05rem;
+    font-weight:700;
+    letter-spacing:.15em;
+    color:#fff;
+    background:var(--teal);
+    border:none;
+    border-radius:8px;
+    padding:13px 44px;
+    cursor:pointer;
+    transition:background .15s, transform .05s;
+  }
+  .btn-primary:hover:not(:disabled){background:var(--teal-dark);}
+  .btn-primary:active:not(:disabled){transform:translateY(1px);}
+  .btn-primary:disabled{
+    background:#B9C3CC;
+    cursor:not-allowed;
+  }
+  .hint{font-size:.82rem;color:var(--muted);}
+
+  .status{
+    text-align:center;
+    margin:16px 0;
+    font-size:.95rem;
+    color:var(--teal-dark);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+  }
+  .status.show{display:flex;}
+  .spinner{
+    width:18px;height:18px;
+    border:3px solid var(--teal-soft);
+    border-top-color:var(--teal);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .error{
+    display:none;
+    margin:16px auto;
+    max-width:720px;
+    background:var(--red-soft);
+    border:1px solid var(--red);
+    color:var(--red);
+    border-radius:6px;
+    padding:10px 16px;
+    font-size:.9rem;
+  }
+  .error.show{display:block;}
+
+  /* ── 交班單 ── */
+  .handoff{
+    display:none;
+    background:var(--card);
+    border:1.5px solid var(--ink);
+    border-radius:8px;
+    overflow:hidden;
+    margin-top:8px;
+  }
+  .handoff.show{display:block;}
+  .handoff-head{
+    background:var(--ink);
+    color:#fff;
+    padding:12px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .handoff-head h2{
+    font-family:"Noto Serif TC",serif;
+    font-size:1.2rem;
+    font-weight:900;
+    letter-spacing:.25em;
+  }
+  .handoff-head .meta{font-size:.75rem;opacity:.75;letter-spacing:.05em;}
+  .handoff-body{padding:18px 22px;}
+  ol.summary{
+    list-style:none;
+    counter-reset:item;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  ol.summary li{
+    counter-increment:item;
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    border-bottom:1px dashed var(--border);
+    padding-bottom:10px;
+  }
+  ol.summary li::before{
+    content:counter(item);
+    flex:0 0 26px;
+    height:26px;
+    border:1.5px solid var(--ink);
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:.85rem;
+    margin-top:2px;
+  }
+  ol.summary li .txt{
+    flex:1;
+    padding:2px 4px;
+    border-radius:4px;
+    outline:none;
+  }
+  ol.summary li .txt:focus{background:var(--teal-soft);}
+  .chip{
+    display:inline-block;
+    font-size:.7rem;
+    font-weight:700;
+    border-radius:4px;
+    padding:0 8px;
+    margin-left:8px;
+    vertical-align:middle;
+    letter-spacing:.05em;
+    white-space:nowrap;
+  }
+  .chip.change{background:var(--amber-soft);color:var(--amber);}
+  .chip.stop{background:var(--red-soft);color:var(--red);}
+  .chip.new{background:var(--green-soft);color:var(--green);}
+  .chip.inh{background:var(--teal-soft);color:var(--teal-dark);}
+
+  .handoff-foot{
+    padding:14px 22px 18px;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    border-top:1.5px solid var(--ink);
+    background:#FBFCFD;
+  }
+  .btn-ghost{
+    font-family:inherit;
+    font-size:.9rem;
+    font-weight:500;
+    color:var(--ink);
+    background:#fff;
+    border:1.5px solid var(--ink);
+    border-radius:6px;
+    padding:8px 20px;
+    cursor:pointer;
+  }
+  .btn-ghost:hover{background:var(--teal-soft);border-color:var(--teal);color:var(--teal-dark);}
+  .edit-hint{font-size:.78rem;color:var(--muted);align-self:center;}
+
+  /* ── 判讀明細 ── */
+  details.detail{
+    margin-top:20px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:var(--card);
+    overflow:hidden;
+  }
+  details.detail summary{
+    cursor:pointer;
+    padding:10px 18px;
+    font-weight:700;
+    font-size:.92rem;
+    letter-spacing:.05em;
+    color:var(--teal-dark);
+    user-select:none;
+  }
+  .detail-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    padding:0 18px 18px;
+  }
+  @media (max-width:720px){ .detail-grid{grid-template-columns:1fr;} }
+  .detail-grid h3{
+    font-size:.85rem;
+    letter-spacing:.08em;
+    margin-bottom:6px;
+    color:var(--muted);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.8rem;
+  }
+  th,td{
+    border:1px solid var(--border);
+    padding:4px 8px;
+    text-align:left;
+    vertical-align:top;
+  }
+  th{background:#F0F3F6;font-weight:700;white-space:nowrap;}
+  td.route-iv{color:var(--muted);text-decoration:line-through;}
+
+  footer{
+    margin-top:40px;
+    text-align:center;
+    font-size:.75rem;
+    color:var(--muted);
+    letter-spacing:.05em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>患者出入院藥物交班
+      <span class="sub">MEDICATION RECONCILIATION HANDOFF</span>
+    </h1>
+    <span class="badge">AI 輔助判讀 · 結果請專科護理師覆核</span>
+  </header>
+
+  <div class="grid">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>門診使用藥物</h2>
+        <span class="tag">住院前基準 Baseline</span>
+      </div>
+      <div class="dropzone" id="zoneOPD" tabindex="0" role="button" aria-label="上傳門診藥物截圖">
+        <span class="icon">📋</span>
+        <span>點一下這裡後按 <kbd>Ctrl</kbd>+<kbd>V</kbd> 貼上截圖<br>或直接拖曳／點擊選擇圖片</span>
+      </div>
+      <input type="file" id="fileOPD" accept="image/*" hidden>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>出院當日使用藥物</h2>
+        <span class="tag">出院處方 Discharge</span>
+      </div>
+      <div class="dropzone" id="zoneDC" tabindex="0" role="button" aria-label="上傳出院當日藥物截圖">
+        <span class="icon">🏥</span>
+        <span>點一下這裡後按 <kbd>Ctrl</kbd>+<kbd>V</kbd> 貼上截圖<br>或直接拖曳／點擊選擇圖片</span>
+      </div>
+      <input type="file" id="fileDC" accept="image/*" hidden>
+    </section>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" id="btnAnalyze" disabled>產生交班摘要</button>
+    <span class="hint" id="readyHint">請先上傳兩張藥物清單截圖</span>
+  </div>
+
+  <div class="status" id="status">
+    <span class="spinner"></span>
+    <span id="statusText">AI 判讀中，正在比對兩份藥物清單⋯</span>
+  </div>
+  <div class="error" id="errorBox"></div>
+
+  <section class="handoff" id="handoff">
+    <div class="handoff-head">
+      <h2>藥物交班摘要</h2>
+      <span class="meta" id="handoffMeta"></span>
+    </div>
+    <div class="handoff-body">
+      <ol class="summary" id="summaryList"></ol>
+    </div>
+    <div class="handoff-foot">
+      <button class="btn-ghost" id="btnCopy">📄 複製交班摘要</button>
+      <button class="btn-ghost" id="btnReset">🔄 重新開始</button>
+      <span class="edit-hint">摘要內容可直接點擊修改後再複製</span>
+    </div>
+  </section>
+
+  <details class="detail" id="detailBox" style="display:none;">
+    <summary>🔍 AI 判讀明細（供覆核 OCR 是否正確）</summary>
+    <div class="detail-grid">
+      <div>
+        <h3>門診藥物清單（判讀結果）</h3>
+        <table id="tblOPD"><thead><tr><th>藥名</th><th>劑量／頻次</th><th>途徑</th></tr></thead><tbody></tbody></table>
+      </div>
+      <div>
+        <h3>出院當日藥物清單（判讀結果）</h3>
+        <table id="tblDC"><thead><tr><th>藥名</th><th>劑量／頻次</th><th>途徑</th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </details>
+
+  <footer>本工具僅輔助交班文書作業，最終用藥資訊仍以醫囑系統為準。</footer>
+</div>
+
+<script>
+(function(){
+  const zones = {
+    opd: { el: document.getElementById('zoneOPD'), file: document.getElementById('fileOPD'), data: null, mediaType: null, label: '門診使用藥物' },
+    dc:  { el: document.getElementById('zoneDC'),  file: document.getElementById('fileDC'),  data: null, mediaType: null, label: '出院當日使用藥物' }
+  };
+  let activeZone = 'opd';
+
+  const btnAnalyze = document.getElementById('btnAnalyze');
+  const readyHint  = document.getElementById('readyHint');
+  const statusBox  = document.getElementById('status');
+  const errorBox   = document.getElementById('errorBox');
+  const handoff    = document.getElementById('handoff');
+  const summaryList= document.getElementById('summaryList');
+  const detailBox  = document.getElementById('detailBox');
+
+  /* ── 圖片載入 ── */
+  function setImage(key, file){
+    if(!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const z = zones[key];
+      z.data = e.target.result.split(',')[1];
+      z.mediaType = file.type;
+      z.el.classList.add('filled');
+      z.el.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.alt = z.label + '截圖';
+      const rm = document.createElement('button');
+      rm.className = 'remove-btn';
+      rm.textContent = '✕';
+      rm.title = '移除圖片';
+      rm.onclick = ev => { ev.stopPropagation(); clearZone(key); };
+      z.el.appendChild(img);
+      z.el.appendChild(rm);
+      updateReady();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearZone(key){
+    const z = zones[key];
+    z.data = null; z.mediaType = null;
+    z.el.classList.remove('filled');
+    z.el.innerHTML = '<span class="icon">' + (key==='opd'?'📋':'🏥') + '</span><span>點一下這裡後按 <kbd>Ctrl</kbd>+<kbd>V</kbd> 貼上截圖<br>或直接拖曳／點擊選擇圖片</span>';
+    updateReady();
+  }
+
+  function updateReady(){
+    const ready = zones.opd.data && zones.dc.data;
+    btnAnalyze.disabled = !ready;
+    readyHint.textContent = ready ? '可以開始分析' :
+      (!zones.opd.data && !zones.dc.data) ? '請先上傳兩張藥物清單截圖' :
+      (!zones.opd.data ? '尚缺「門診使用藥物」截圖' : '尚缺「出院當日使用藥物」截圖');
+  }
+
+  Object.entries(zones).forEach(([key, z])=>{
+    z.el.addEventListener('click', ()=>{
+      setActive(key);
+      if(!z.data) z.file.click();
+    });
+    z.el.addEventListener('focus', ()=>setActive(key));
+    z.file.addEventListener('change', e=>{ if(e.target.files[0]) setImage(key, e.target.files[0]); e.target.value=''; });
+    z.el.addEventListener('dragover', e=>{ e.preventDefault(); z.el.classList.add('dragover'); });
+    z.el.addEventListener('dragleave', ()=>z.el.classList.remove('dragover'));
+    z.el.addEventListener('drop', e=>{
+      e.preventDefault();
+      z.el.classList.remove('dragover');
+      setActive(key);
+      const f = e.dataTransfer.files[0];
+      if(f) setImage(key, f);
+    });
+  });
+
+  function setActive(key){
+    activeZone = key;
+    Object.entries(zones).forEach(([k,z])=>z.el.classList.toggle('active-target', k===key));
+  }
+
+  /* 全域貼上：貼到目前選取的區塊；若已滿則貼到另一個空的 */
+  document.addEventListener('paste', e=>{
+    const items = e.clipboardData && e.clipboardData.items;
+    if(!items) return;
+    for(const item of items){
+      if(item.type.startsWith('image/')){
+        e.preventDefault();
+        let target = activeZone;
+        if(zones[target].data){
+          const other = target==='opd' ? 'dc' : 'opd';
+          if(!zones[other].data) target = other;
+        }
+        setImage(target, item.getAsFile());
+        setActive(target==='opd' ? 'dc' : 'opd'); // 自動跳到下一格方便連續貼上
+        return;
+      }
+    }
+  });
+  setActive('opd');
+
+  /* ── AI 分析 ── */
+  const SYSTEM_RULES = `你是一位台灣醫學中心的臨床藥事交班助理，協助專科護理師比對「門診使用藥物（住院前基準）」與「出院當日使用藥物（出院處方）」兩張醫囑截圖，產生藥物交班摘要。
+
+請先分別完整判讀兩張截圖中的藥物清單（藥名、劑量、頻次、途徑 route），再依下列規則比對並產生「條列式」交班摘要：
+
+【交班摘要規則】
+1. 劑量或頻次有更改的藥物一定要列出，格式例如：「Prednisolone 原本 2 tab BID 改 1 tab QD」。
+2. 停用的藥物要列出（例如：「Allegra 停用」）；新增的藥物也要列出（例如：「新增 XXX 1 tab QD」）。
+3. 途徑為 INH（吸入）的藥物，只要出院當日有使用，一律都要列出一條，格式例如：「請續用支氣管擴張劑 Trimbow 2 puff BID」；若是新增或劑量調整的吸入藥物，請在同一條中說明。
+4. 途徑為 IV、IVA、IVD（靜脈給藥）的藥物一律不要列出，因為患者不可能帶靜脈藥物出院。
+5. 沒有變動的口服藥物不需列出。
+6. 藥名保留原文（英文商品名/學名），敘述使用繁體中文（正體中文），絕對不可使用簡體字。
+7. 若截圖字跡模糊無法確認的藥物，請在該條摘要註明「（判讀不確定，請覆核）」。
+
+請「只」輸出以下 JSON 格式，不要有任何其他文字、前言或 markdown 標記：
+{
+  "opd_list": [{"name":"藥名","dose":"劑量與頻次","route":"PO/INH/IV/..."}],
+  "dc_list": [{"name":"藥名","dose":"劑量與頻次","route":"PO/INH/IV/..."}],
+  "summary": [{"text":"交班摘要句子","type":"change|stop|new|inh"}]
+}
+type 定義：change=劑量頻次更改、stop=停用、new=新增、inh=吸入藥物續用。
+輸出務必精簡：dose 欄位只寫劑量與頻次（例如 "1 tab QD"、"2 puff BID"），不要重複藥名、成分含量以外的多餘敘述，JSON 不要換行縮排（單行輸出）。`;
+
+  btnAnalyze.addEventListener('click', analyze);
+
+  async function analyze(){
+    errorBox.classList.remove('show');
+    handoff.classList.remove('show');
+    detailBox.style.display = 'none';
+    statusBox.classList.add('show');
+    btnAnalyze.disabled = true;
+
+    try{
+      /* ⚠️ 部署設定：請將下方網址換成您自己的 Cloudflare Worker 網址 */
+      const WORKER_URL = "https://discharge-med.international9901149.workers.dev";
+
+      const response = await fetch(WORKER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 8000,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "text", text: "以下第一張圖是【門診使用藥物】（住院前基準），第二張圖是【出院當日使用藥物】（出院處方）。" },
+              { type: "image", source: { type: "base64", media_type: zones.opd.mediaType, data: zones.opd.data } },
+              { type: "image", source: { type: "base64", media_type: zones.dc.mediaType, data: zones.dc.data } },
+              { type: "text", text: SYSTEM_RULES }
+            ]
+          }]
+        })
+      });
+      if(!response.ok){
+        const errText = await response.text();
+        throw new Error("API 回應錯誤 (" + response.status + ")：" + errText.slice(0,200));
+      }
+      const data = await response.json();
+      if(data.stop_reason === 'max_tokens'){
+        throw new Error('藥物清單過長，AI 回應被截斷。請將截圖分段（例如一次貼半張藥單）再試。');
+      }
+      const text = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+      const result = parseJSONLoose(text);
+      render(result);
+    }catch(err){
+      errorBox.textContent = '分析失敗：' + err.message + '（可再按一次「產生交班摘要」重試，或確認截圖是否清晰）';
+      errorBox.classList.add('show');
+    }finally{
+      statusBox.classList.remove('show');
+      btnAnalyze.disabled = false;
+    }
+  }
+
+  /* ── 寬鬆 JSON 解析：容忍前後多餘文字與輕微截斷 ── */
+  function parseJSONLoose(text){
+    let s = text.replace(/```json|```/g,'').trim();
+    // 只取第一個 { 到最後一個 } 之間的內容
+    const start = s.indexOf('{');
+    const end = s.lastIndexOf('}');
+    if(start === -1) throw new Error('AI 未回傳 JSON 格式，請重試。');
+    s = end > start ? s.slice(start, end+1) : s.slice(start);
+    try{
+      return JSON.parse(s);
+    }catch(e1){
+      // 嘗試修復截斷：關閉未完成的字串與括號
+      let repaired = s;
+      const quotes = (repaired.match(/(?<!\\)"/g)||[]).length;
+      if(quotes % 2 === 1) repaired += '"';
+      let openCurly = 0, openSquare = 0, inStr = false;
+      for(let i=0;i<repaired.length;i++){
+        const c = repaired[i];
+        if(c === '"' && repaired[i-1] !== '\\') inStr = !inStr;
+        if(inStr) continue;
+        if(c === '{') openCurly++;
+        else if(c === '}') openCurly--;
+        else if(c === '[') openSquare++;
+        else if(c === ']') openSquare--;
+      }
+      repaired = repaired.replace(/,\s*$/,'');
+      repaired += ']'.repeat(Math.max(0,openSquare)) + '}'.repeat(Math.max(0,openCurly));
+      try{
+        return JSON.parse(repaired);
+      }catch(e2){
+        throw new Error('JSON 解析失敗，請再按一次重試。');
+      }
+    }
+  }
+
+  /* ── 呈現結果 ── */
+  const chipLabel = { change:'劑量更改', stop:'停用', new:'新增', inh:'吸入續用' };
+
+  function render(result){
+    summaryList.innerHTML = '';
+    const items = Array.isArray(result.summary) ? result.summary : [];
+    if(items.length === 0){
+      const li = document.createElement('li');
+      li.innerHTML = '<span class="txt" contenteditable="true">門診與出院藥物無需交班之差異（吸入藥物亦無）。</span>';
+      summaryList.appendChild(li);
+    }
+    items.forEach(item=>{
+      const li = document.createElement('li');
+      const txt = document.createElement('span');
+      txt.className = 'txt';
+      txt.contentEditable = 'true';
+      txt.textContent = item.text || String(item);
+      li.appendChild(txt);
+      if(item.type && chipLabel[item.type]){
+        const chip = document.createElement('span');
+        chip.className = 'chip ' + item.type;
+        chip.textContent = chipLabel[item.type];
+        li.appendChild(chip);
+      }
+      summaryList.appendChild(li);
+    });
+
+    const now = new Date();
+    document.getElementById('handoffMeta').textContent =
+      '產生時間 ' + now.getFullYear() + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0') +
+      ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+    fillTable('tblOPD', result.opd_list);
+    fillTable('tblDC', result.dc_list);
+    detailBox.style.display = 'block';
+    handoff.classList.add('show');
+    handoff.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function fillTable(id, list){
+    const tbody = document.querySelector('#'+id+' tbody');
+    tbody.innerHTML = '';
+    (Array.isArray(list)?list:[]).forEach(d=>{
+      const tr = document.createElement('tr');
+      const isIV = /^(IV|IVA|IVD)$/i.test((d.route||'').trim());
+      tr.innerHTML = '<td' + (isIV?' class="route-iv"':'') + '>' + esc(d.name) + '</td>' +
+                     '<td' + (isIV?' class="route-iv"':'') + '>' + esc(d.dose) + '</td>' +
+                     '<td' + (isIV?' class="route-iv"':'') + '>' + esc(d.route) + '</td>';
+      tbody.appendChild(tr);
+    });
+    if(tbody.children.length===0){
+      tbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted)">（無資料）</td></tr>';
+    }
+  }
+
+  function esc(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  /* ── 複製與重設 ── */
+  document.getElementById('btnCopy').addEventListener('click', async ()=>{
+    const lines = ['【藥物交班摘要】'];
+    summaryList.querySelectorAll('li .txt').forEach((el,i)=>{
+      lines.push((i+1) + '. ' + el.textContent.trim());
+    });
+    const textOut = lines.join('\n');
+    try{
+      await navigator.clipboard.writeText(textOut);
+      flashBtn('btnCopy','✅ 已複製');
+    }catch(e){
+      // 剪貼簿 API 不可用時的備援
+      const ta = document.createElement('textarea');
+      ta.value = textOut;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      flashBtn('btnCopy','✅ 已複製');
+    }
+  });
+
+  function flashBtn(id, msg){
+    const btn = document.getElementById(id);
+    const orig = btn.textContent;
+    btn.textContent = msg;
+    setTimeout(()=>btn.textContent = orig, 1500);
+  }
+
+  document.getElementById('btnReset').addEventListener('click', ()=>{
+    clearZone('opd'); clearZone('dc');
+    handoff.classList.remove('show');
+    detailBox.style.display = 'none';
+    errorBox.classList.remove('show');
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+})();
+</script>
+</body>
+</html>
